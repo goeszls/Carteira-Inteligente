@@ -1,0 +1,583 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Carteira Inteligente</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        brand: {
+                            50: '#f0fdf4',
+                            500: '#22c55e',
+                            600: '#16a34a',
+                            700: '#15803d',
+                            900: '#14532d',
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        ::-webkit-scrollbar {
+            width: 6px;
+            height: 6px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #0f172a;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #334155;
+            border-radius: 3px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #475569;
+        }
+        .canvas-container {
+            position: relative;
+            width: 100%;
+            max-width: 280px;
+            margin: 0 auto;
+        }
+    </style>
+</head>
+<body class="bg-slate-950 text-slate-100 min-h-screen font-sans antialiased selection:bg-emerald-500 selection:text-white">
+
+    <!-- CABEÇALHO -->
+    <header class="border-b border-slate-800 bg-slate-900/85 backdrop-blur sticky top-0 z-40">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between gap-4">
+            <div class="flex items-center gap-3 min-w-0">
+                <div class="bg-emerald-500/10 border border-emerald-500/20 p-2 rounded-xl text-emerald-400 shrink-0">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h18M7 15h1m4 0h1m-7 4h12a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"></path>
+                    </svg>
+                </div>
+                <div class="truncate">
+                    <h1 class="font-bold text-lg leading-tight tracking-tight text-white truncate">Carteira Inteligente</h1>
+                    <p class="text-xs text-slate-400 truncate">Gestão Financeira Sem Complicação</p>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- CONTEÚDO PRINCIPAL -->
+    <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8">
+
+        <!-- ALERTA DE ORÇAMENTO EXCEDIDO -->
+        <div id="alert-banner" class="hidden bg-rose-500/10 border border-rose-500/20 text-rose-400 p-4 rounded-2xl flex items-center gap-3">
+            <svg class="w-6 h-6 shrink-0 text-rose-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path>
+            </svg>
+            <div class="text-sm">
+                <span class="font-bold">Aviso de Limite:</span> O teto de gastos de uma ou mais pastas foi ultrapassado.
+            </div>
+        </div>
+
+        <!-- PAINEL DE METRICAS PRINCIPAIS -->
+        <section class="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <!-- CARD 1: RENDA E EDIÇÃO DE RENDA BASE -->
+            <div class="bg-slate-900 border border-slate-800 p-5 rounded-2xl flex flex-col justify-between space-y-3">
+                <div class="flex items-center justify-between text-slate-400">
+                    <span class="text-xs font-semibold uppercase tracking-wider">Renda Líquida Orçamentária</span>
+                    <div class="p-2 bg-emerald-500/10 rounded-lg text-emerald-400">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                        </svg>
+                    </div>
+                </div>
+                <div>
+                    <span id="display-income" class="text-2xl sm:text-3xl font-extrabold text-white truncate block">R$ 0,00</span>
+                </div>
+                
+                <!-- EDIÇÃO RÁPIDA DE RENDA BASE NA PRÓPRIA TELA -->
+                <div class="border-t border-slate-800/80 pt-2 space-y-2">
+                    <div class="flex items-center gap-2">
+                        <input type="number" id="quick-income-input" step="0.01" min="0" placeholder="Renda Base" class="w-full bg-slate-950 border border-slate-800 rounded-lg px-2.5 py-1 text-xs text-white focus:outline-none focus:border-emerald-500">
+                        <button onclick="saveQuickIncome()" class="bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-semibold px-3 py-1 rounded-lg transition-colors shrink-0">Salvar</button>
+                    </div>
+                    <div class="flex justify-between text-[11px] text-purple-400">
+                        <span>Alocado RDB:</span>
+                        <span id="detail-rdb-deduction" class="font-semibold">- R$ 0,00</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="bg-slate-900 border border-slate-800 p-5 rounded-2xl flex flex-col justify-between space-y-2">
+                <div class="flex items-center justify-between text-slate-400">
+                    <span class="text-xs font-semibold uppercase tracking-wider">Total de Gastos</span>
+                    <div class="p-2 bg-rose-500/10 rounded-lg text-rose-400">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 17h8m0 0V9m0 8l-8-8-4 4-6-6"></path>
+                        </svg>
+                    </div>
+                </div>
+                <div>
+                    <span id="display-expenses" class="text-2xl sm:text-3xl font-extrabold text-white truncate block">R$ 0,00</span>
+                </div>
+                <div class="w-full bg-slate-800 rounded-full h-1.5 overflow-hidden mt-1">
+                    <div id="expense-progress-bar" class="bg-rose-500 h-full transition-all duration-300" style="width: 0%"></div>
+                </div>
+                <div class="border-t border-slate-800/80 pt-2 text-[11px] flex justify-between text-slate-400">
+                    <span>Lançamentos Ativos:</span>
+                    <span id="detail-total-items" class="font-semibold text-slate-200">0 itens</span>
+                </div>
+            </div>
+
+            <div class="bg-slate-900 border border-slate-800 p-5 rounded-2xl flex flex-col justify-between space-y-2">
+                <div class="flex items-center justify-between text-slate-400">
+                    <span class="text-xs font-semibold uppercase tracking-wider">Saldo Disponível</span>
+                    <div id="balance-icon-bg" class="p-2 bg-emerald-500/10 rounded-lg text-emerald-400">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                        </svg>
+                    </div>
+                </div>
+                <div>
+                    <span id="display-balance" class="text-2xl sm:text-3xl font-extrabold text-emerald-400 truncate block">R$ 0,00</span>
+                </div>
+                <p id="balance-status" class="text-xs text-slate-400">Disponibilidade orçamentária ok</p>
+                <div class="border-t border-slate-800/80 pt-2 text-[11px] flex justify-between text-slate-400">
+                    <span>Comprometimento:</span>
+                    <span id="detail-commitment-pct" class="font-semibold text-slate-200">0%</span>
+                </div>
+            </div>
+        </section>
+
+        <!-- RECOMENDAÇÕES DA IA & CAIXINHA RDB NUBANK -->
+        <section class="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <div class="md:col-span-2 bg-slate-900 border border-slate-800 p-6 rounded-2xl space-y-4">
+                <div class="flex items-center gap-3">
+                    <div class="p-2 bg-indigo-500/10 border border-indigo-500/20 text-indigo-400 rounded-xl">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z"></path>
+                        </svg>
+                    </div>
+                    <div>
+                        <h2 class="font-bold text-base text-white">IA Consultora Financeira Avançada</h2>
+                        <p class="text-xs text-slate-400">Diagnóstico comportamental e sugestões automatizadas de mercado</p>
+                    </div>
+                </div>
+                <div id="ai-suggestions-content" class="space-y-3 text-sm text-slate-300"></div>
+            </div>
+
+            <!-- CARD RDB NUBANK (SIMPLIFICADO SEM ESTIMATIVA POR SEGUNDO) -->
+            <div class="bg-slate-900 border border-slate-800 p-6 rounded-2xl space-y-4 flex flex-col justify-between">
+                <div class="space-y-4">
+                    <div class="flex items-center justify-between">
+                        <div class="flex items-center gap-2">
+                            <div class="p-2 bg-purple-500/10 text-purple-400 rounded-xl border border-purple-500/20">
+                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                                </svg>
+                            </div>
+                            <h3 class="font-bold text-sm text-white">Caixinha RDB Nubank</h3>
+                        </div>
+                        <span class="text-[10px] font-bold bg-purple-500/20 text-purple-300 px-2 py-0.5 rounded-full border border-purple-500/30">100% CDI</span>
+                    </div>
+
+                    <div class="space-y-1.5">
+                        <label class="block text-xs font-semibold text-slate-400 uppercase tracking-wider">Valor Alocado no RDB (R$)</label>
+                        <input type="number" id="cdi-input-amount" step="0.01" min="0" placeholder="0,00" oninput="handleCdiChange()" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3.5 py-2 text-sm text-white focus:outline-none focus:border-purple-500 transition-colors">
+                        <p class="text-[11px] text-purple-400">Subtraído imediatamente da sua Renda Líquida.</p>
+                    </div>
+
+                    <div class="bg-slate-950 p-3.5 rounded-xl border border-slate-800 space-y-0.5">
+                        <span class="text-[11px] text-slate-500 block">Rendimento Estimado / Mês:</span>
+                        <span id="cdi-monthly-yield" class="text-xl font-bold text-purple-400">R$ 0,00</span>
+                    </div>
+                </div>
+                <p class="text-[10px] text-slate-500 italic">*Cálculo estimado a 100% do CDI (11,25% a.a.).</p>
+            </div>
+        </section>
+
+        <!-- FORMULÁRIO E PASTAS PERSONALIZÁVEIS -->
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+            <div class="bg-slate-900 border border-slate-800 p-6 rounded-2xl space-y-5 h-fit">
+                <div class="flex items-center gap-2 border-b border-slate-800 pb-4">
+                    <svg class="w-5 h-5 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path>
+                    </svg>
+                    <h2 class="font-bold text-base text-white">Registrar Gasto na Pasta</h2>
+                </div>
+
+                <form id="expense-form" onsubmit="handleAddExpense(event)" class="space-y-4">
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1">Descrição do Gasto</label>
+                        <input type="text" id="input-title" required placeholder="Ex: Supermercado, Aluguel" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-2.5 text-sm text-white focus:outline-none focus:border-emerald-500">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1">Valor Gasto (R$)</label>
+                        <input type="number" id="input-amount" step="0.01" min="0.01" required placeholder="0,00" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-2.5 text-sm text-white focus:outline-none focus:border-emerald-500">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1">Selecionar Pasta / Envelope</label>
+                        <select id="input-category" required class="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-2.5 text-sm text-white focus:outline-none focus:border-emerald-500"></select>
+                    </div>
+                    <button type="submit" class="w-full bg-emerald-600 hover:bg-emerald-500 text-white font-semibold py-3 px-4 rounded-xl transition-colors shadow-lg text-sm">Lançar na Pasta</button>
+                </form>
+            </div>
+
+            <!-- SEÇÃO DE PASTAS COM FORMULÁRIO DE NOVA PASTA EMBUTIDO -->
+            <div class="lg:col-span-2 space-y-6">
+                <div class="bg-slate-900 border border-slate-800 p-5 rounded-2xl space-y-4">
+                    <h2 class="font-bold text-base text-white">Criar Nova Pasta</h2>
+                    <form onsubmit="handleCreateFolder(event)" class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                        <input type="text" id="new-folder-name" required placeholder="Nome (Ex: Lazer)" class="bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-sm text-white focus:outline-none focus:border-emerald-500">
+                        <input type="number" id="new-folder-limit" step="0.01" required placeholder="Teto Limite (R$)" class="bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-sm text-white focus:outline-none focus:border-emerald-500">
+                        <button type="submit" class="bg-indigo-600 hover:bg-indigo-500 text-white font-semibold py-2 px-4 rounded-xl text-sm transition-colors">Adicionar Pasta</button>
+                    </form>
+                </div>
+
+                <div>
+                    <h2 class="font-bold text-lg text-white mb-1">Pastas & Saldo Restante por Envelope</h2>
+                    <p class="text-xs text-slate-400 mb-4">Acompanhe o teto, altere o limite direto na pasta e veja quanto sobrou</p>
+                    <div id="folders-grid" class="grid grid-cols-1 sm:grid-cols-2 gap-4"></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- GRÁFICO E TABELA -->
+        <section class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+            <div class="bg-slate-900 border border-slate-800 p-6 rounded-2xl space-y-4">
+                <h3 class="font-bold text-base text-white border-b border-slate-800 pb-3">Divisão por Categoria</h3>
+                <div class="canvas-container py-4 flex justify-center">
+                    <div id="custom-chart-container" class="w-full space-y-3"></div>
+                </div>
+            </div>
+
+            <div class="lg:col-span-2 bg-slate-900 border border-slate-800 p-6 rounded-2xl space-y-4">
+                <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 border-b border-slate-800 pb-4">
+                    <h3 class="font-bold text-base text-white">Histórico de Lançamentos</h3>
+                    <input type="text" id="search-input" oninput="renderExpensesTable()" placeholder="Buscar lançamento..." class="w-full sm:w-64 bg-slate-950 border border-slate-800 rounded-xl px-3 py-1.5 text-xs text-white focus:outline-none focus:border-emerald-500">
+                </div>
+                <div class="overflow-x-auto">
+                    <table class="w-full text-left text-sm text-slate-300">
+                        <thead class="text-xs uppercase bg-slate-950/50 text-slate-400 border-b border-slate-800">
+                            <tr>
+                                <th class="px-4 py-3">Descrição</th>
+                                <th class="px-4 py-3">Pasta</th>
+                                <th class="px-4 py-3">Valor</th>
+                                <th class="px-4 py-3 text-right">Remover</th>
+                            </tr>
+                        </thead>
+                        <tbody id="expenses-table-body" class="divide-y divide-slate-800/50"></tbody>
+                    </table>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <!-- SCRIPT DA APLICAÇÃO -->
+    <script>
+        const COLOR_PALETTE = [
+            { bg: 'bg-emerald-500', border: 'border-emerald-500/30', text: 'text-emerald-400' },
+            { bg: 'bg-indigo-500', border: 'border-indigo-500/30', text: 'text-indigo-400' },
+            { bg: 'bg-purple-500', border: 'border-purple-500/30', text: 'text-purple-400' },
+            { bg: 'bg-amber-500', border: 'border-amber-500/30', text: 'text-amber-400' },
+            { bg: 'bg-cyan-500', border: 'border-cyan-500/30', text: 'text-cyan-400' },
+            { bg: 'bg-pink-500', border: 'border-pink-500/30', text: 'text-pink-400' },
+            { bg: 'bg-blue-500', border: 'border-blue-500/30', text: 'text-blue-400' }
+        ];
+
+        const DEFAULT_STATE = {
+            baseIncome: 4000.00,
+            cdiAllocated: 0.00,
+            folders: [
+                { id: 'f1', name: 'Moradia', limit: 1500.00, colorIndex: 0 },
+                { id: 'f2', name: 'Alimentação', limit: 1000.00, colorIndex: 1 },
+                { id: 'f3', name: 'Transporte', limit: 400.00, colorIndex: 2 },
+                { id: 'f4', name: 'Lazer', limit: 500.00, colorIndex: 3 },
+                { id: 'f5', name: 'Outros', limit: 300.00, colorIndex: 4 }
+            ],
+            expenses: []
+        };
+
+        let state = loadData();
+
+        function loadData() {
+            try {
+                const saved = localStorage.getItem('carteira_inteligente_pro_db');
+                if (saved) return JSON.parse(saved);
+            } catch (e) {}
+            return DEFAULT_STATE;
+        }
+
+        function saveData() {
+            try {
+                localStorage.setItem('carteira_inteligente_pro_db', JSON.stringify(state));
+            } catch (e) {}
+            renderApp();
+        }
+
+        function formatCurrency(val) {
+            return new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(val || 0);
+        }
+
+        function saveQuickIncome() {
+            const val = parseFloat(document.getElementById('quick-income-input').value);
+            if (!isNaN(val) && val >= 0) {
+                state.baseIncome = val;
+                saveData();
+            }
+        }
+
+        function handleCdiChange() {
+            const inputVal = parseFloat(document.getElementById('cdi-input-amount').value);
+            state.cdiAllocated = isNaN(inputVal) || inputVal < 0 ? 0 : inputVal;
+            saveData();
+        }
+
+        function handleAddExpense(e) {
+            e.preventDefault();
+            const title = document.getElementById('input-title').value.trim();
+            const amount = parseFloat(document.getElementById('input-amount').value);
+            const folderId = document.getElementById('input-category').value;
+
+            if (!title || isNaN(amount) || amount <= 0) return;
+
+            state.expenses.unshift({
+                id: Date.now().toString(),
+                title,
+                amount,
+                folderId,
+                date: new Date().toISOString()
+            });
+            document.getElementById('expense-form').reset();
+            saveData();
+        }
+
+        function deleteExpense(id) {
+            state.expenses = state.expenses.filter(item => item.id !== id);
+            saveData();
+        }
+
+        function handleCreateFolder(e) {
+            e.preventDefault();
+            const name = document.getElementById('new-folder-name').value.trim();
+            const limit = parseFloat(document.getElementById('new-folder-limit').value);
+
+            if (!name || isNaN(limit) || limit < 0) return;
+
+            state.folders.push({
+                id: 'f_' + Date.now(),
+                name,
+                limit,
+                colorIndex: Math.floor(Math.random() * COLOR_PALETTE.length)
+            });
+            document.getElementById('new-folder-name').value = '';
+            document.getElementById('new-folder-limit').value = '';
+            saveData();
+        }
+
+        function updateFolderLimit(id, newLimit) {
+            const folder = state.folders.find(f => f.id === id);
+            if (folder && !isNaN(newLimit) && newLimit >= 0) {
+                folder.limit = newLimit;
+                saveData();
+            }
+        }
+
+        function deleteFolder(id) {
+            if (state.folders.length <= 1) {
+                alert("Mantenha ao menos uma pasta ativa.");
+                return;
+            }
+            state.folders = state.folders.filter(f => f.id !== id);
+            const fallbackId = state.folders[0].id;
+            state.expenses.forEach(e => { if (e.folderId === id) e.folderId = fallbackId; });
+            saveData();
+        }
+
+        function renderApp() {
+            const effectiveIncome = Math.max(state.baseIncome - (state.cdiAllocated || 0), 0);
+            const totalExpenses = state.expenses.reduce((acc, curr) => acc + curr.amount, 0);
+            const balance = effectiveIncome - totalExpenses;
+
+            document.getElementById('display-income').textContent = formatCurrency(effectiveIncome);
+            document.getElementById('display-expenses').textContent = formatCurrency(totalExpenses);
+            document.getElementById('display-balance').textContent = formatCurrency(balance);
+            document.getElementById('quick-income-input').value = state.baseIncome;
+            document.getElementById('cdi-input-amount').value = state.cdiAllocated || '';
+
+            document.getElementById('detail-rdb-deduction').textContent = `- ${formatCurrency(state.cdiAllocated || 0)}`;
+            document.getElementById('detail-total-items').textContent = `${state.expenses.length} lançamentos`;
+
+            const commitmentPct = effectiveIncome > 0 ? ((totalExpenses / effectiveIncome) * 100).toFixed(1) : 0;
+            document.getElementById('detail-commitment-pct').textContent = `${commitmentPct}% da Renda`;
+
+            const progressBar = document.getElementById('expense-progress-bar');
+            const pct = effectiveIncome > 0 ? Math.min((totalExpenses / effectiveIncome) * 100, 100) : 0;
+            progressBar.style.width = pct + '%';
+
+            const balanceDisplay = document.getElementById('display-balance');
+            const balanceStatus = document.getElementById('balance-status');
+            const alertBanner = document.getElementById('alert-banner');
+
+            if (balance < 0) {
+                balanceDisplay.className = "text-2xl sm:text-3xl font-extrabold text-rose-500 truncate block";
+                balanceStatus.textContent = "Orçamento em Déficit!";
+                balanceStatus.className = "text-xs text-rose-400 font-bold";
+            } else {
+                balanceDisplay.className = "text-2xl sm:text-3xl font-extrabold text-emerald-400 truncate block";
+                balanceStatus.textContent = "Disponibilidade orçamentária ok";
+                balanceStatus.className = "text-xs text-slate-400";
+            }
+
+            document.getElementById('input-category').innerHTML = state.folders.map(f => `<option value="${f.id}">${f.name}</option>`).join('');
+
+            const foldersGrid = document.getElementById('folders-grid');
+            let hasExceededFolder = false;
+
+            foldersGrid.innerHTML = state.folders.map((folder, index) => {
+                const folderSpent = state.expenses.filter(e => e.folderId === folder.id).reduce((acc, curr) => acc + curr.amount, 0);
+                const folderRemaining = folder.limit - folderSpent;
+                const isExceeded = folderSpent > folder.limit;
+                if (isExceeded) hasExceededFolder = true;
+                const folderPct = folder.limit > 0 ? Math.min((folderSpent / folder.limit) * 100, 100) : 0;
+                const colorObj = COLOR_PALETTE[(folder.colorIndex !== undefined ? folder.colorIndex : index) % COLOR_PALETTE.length];
+
+                return `
+                    <div class="bg-slate-900 border ${isExceeded ? 'border-rose-500/50 bg-rose-500/5' : colorObj.border} p-4 rounded-2xl space-y-3">
+                        <div class="flex items-center justify-between gap-2">
+                            <h3 class="font-bold text-sm text-white truncate">${folder.name}</h3>
+                            <button onclick="deleteFolder('${folder.id}')" title="Excluir Pasta" class="text-slate-500 hover:text-rose-400 text-xs">Excluir</button>
+                        </div>
+                        <div class="w-full bg-slate-950 rounded-full h-2 overflow-hidden border border-slate-800">
+                            <div class="${isExceeded ? 'bg-rose-500' : colorObj.bg} h-full transition-all duration-300" style="width: ${folderPct}%"></div>
+                        </div>
+                        <div class="flex justify-between items-center text-xs pt-1">
+                            <span class="text-slate-400">Gasto: <strong class="text-white">${formatCurrency(folderSpent)}</strong></span>
+                            <span class="${folderRemaining < 0 ? 'text-rose-400 font-bold' : 'text-emerald-400 font-bold'}">
+                                ${folderRemaining < 0 ? 'Excedido: ' + formatCurrency(Math.abs(folderRemaining)) : 'Sobrou: ' + formatCurrency(folderRemaining)}
+                            </span>
+                        </div>
+                        <div class="pt-2 border-t border-slate-800/60 flex items-center justify-between gap-2 text-[11px]">
+                            <span class="text-slate-500 shrink-0">Teto Limite:</span>
+                            <input type="number" step="0.01" value="${folder.limit}" onchange="updateFolderLimit('${folder.id}', parseFloat(this.value))" class="w-24 bg-slate-950 border border-slate-800 rounded px-2 py-0.5 text-right text-white focus:outline-none focus:border-emerald-500">
+                        </div>
+                    </div>
+                `;
+            }).join('');
+
+            if (hasExceededFolder || balance < 0) {
+                alertBanner.classList.remove('hidden');
+            } else {
+                alertBanner.classList.add('hidden');
+            }
+
+            renderAIEnhancedSuggestions(totalExpenses, effectiveIncome, balance);
+            renderExpensesTable();
+            renderCustomChart();
+            updateCdiYieldDisplay();
+        }
+
+        function updateCdiYieldDisplay() {
+            const allocated = state.cdiAllocated || 0;
+            const monthlyYield = allocated * (0.1125 / 12);
+            document.getElementById('cdi-monthly-yield').textContent = formatCurrency(monthlyYield);
+        }
+
+        function renderAIEnhancedSuggestions(totalExpenses, effectiveIncome, balance) {
+            const container = document.getElementById('ai-suggestions-content');
+            
+            if (state.expenses.length === 0) {
+                container.innerHTML = `<div class="bg-slate-950 p-4 rounded-xl border border-slate-800 text-xs text-slate-400 space-y-1">
+                    <p class="font-semibold text-slate-200">Diagnóstico Inicial:</p>
+                    <p>Adicione seus primeiros lançamentos nas pastas para que a IA analise seus gastos por envelope.</p>
+                </div>`;
+                return;
+            }
+
+            const topCategory = state.folders.map(f => {
+                const spent = state.expenses.filter(e => e.folderId === f.id).reduce((acc, curr) => acc + curr.amount, 0);
+                return { name: f.name, spent };
+            }).sort((a, b) => b.spent - a.spent)[0];
+
+            let html = '';
+
+            if (balance < 0) {
+                html += `<div class="bg-rose-500/10 border border-rose-500/20 text-rose-300 p-3.5 rounded-xl text-xs space-y-1">
+                    <p class="font-bold flex items-center gap-1.5">
+                        <svg class="w-4 h-4 shrink-0 text-rose-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path></svg>
+                        Alerta de Déficit Orçamentário:
+                    </p>
+                    <p>O total de gastos (${formatCurrency(totalExpenses)}) ultrapassou sua renda líquida. O envelope com maior consumo é <strong>${topCategory.name}</strong> (${formatCurrency(topCategory.spent)}).</p>
+                </div>`;
+            } else {
+                html += `<div class="bg-emerald-500/10 border border-emerald-500/20 text-emerald-300 p-3.5 rounded-xl text-xs space-y-1">
+                    <p class="font-bold flex items-center gap-1.5">
+                        <svg class="w-4 h-4 shrink-0 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                        Gestão de Envelopes Saudável:
+                    </p>
+                    <p>Seus tetos de pastas estão sob controle. O saldo livre atual é de ${formatCurrency(balance)}. Continue registrando cada gasto em seu respectivo envelope.</p>
+                </div>`;
+            }
+
+            container.innerHTML = html;
+        }
+
+        function renderExpensesTable() {
+            const query = document.getElementById('search-input').value.toLowerCase();
+            const tbody = document.getElementById('expenses-table-body');
+            const filtered = state.expenses.filter(exp => exp.title.toLowerCase().includes(query));
+
+            if (filtered.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="4" class="px-4 py-6 text-center text-slate-500 text-xs">Nenhum registro localizado.</td></tr>`;
+                return;
+            }
+
+            tbody.innerHTML = filtered.map(exp => {
+                const folder = state.folders.find(f => f.id === exp.folderId) || { name: 'Geral' };
+                return `
+                    <tr class="hover:bg-slate-950/40 transition-colors">
+                        <td class="px-4 py-3 font-semibold text-white break-all">${exp.title}</td>
+                        <td class="px-4 py-3"><span class="bg-slate-800 text-slate-300 px-2 py-0.5 rounded text-[11px]">${folder.name}</span></td>
+                        <td class="px-4 py-3 font-bold text-rose-400">${formatCurrency(exp.amount)}</td>
+                        <td class="px-4 py-3 text-right">
+                            <button onclick="deleteExpense('${exp.id}')" class="text-slate-500 hover:text-rose-400 p-1">
+                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
+                            </button>
+                        </td>
+                    </tr>
+                `;
+            }).join('');
+        }
+
+        function renderCustomChart() {
+            const container = document.getElementById('custom-chart-container');
+            const total = state.expenses.reduce((acc, curr) => acc + curr.amount, 0);
+            if (total === 0) {
+                container.innerHTML = `<p class="text-center text-xs text-slate-500 py-6">Sem despesas cadastradas.</p>`;
+                return;
+            }
+
+            container.innerHTML = state.folders.map((f, index) => {
+                const spent = state.expenses.filter(e => e.folderId === f.id).reduce((acc, curr) => acc + curr.amount, 0);
+                if (spent === 0) return '';
+                const pct = ((spent / total) * 100).toFixed(1);
+                const colorObj = COLOR_PALETTE[(f.colorIndex !== undefined ? f.colorIndex : index) % COLOR_PALETTE.length];
+
+                return `
+                    <div class="space-y-1">
+                        <div class="flex justify-between text-xs text-slate-300">
+                            <span>${f.name}</span>
+                            <span class="font-bold">${pct}% (${formatCurrency(spent)})</span>
+                        </div>
+                        <div class="w-full bg-slate-950 rounded-full h-2 overflow-hidden border border-slate-800">
+                            <div class="${colorObj.bg} h-full" style="width: ${pct}%"></div>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        renderApp();
+    </script>
+</body>
+</html>
